@@ -1,6 +1,7 @@
 import {describe, test, expect, beforeEach, afterEach, vi} from 'vitest';
-import {workerFactory} from './web_worker.ts';
+import {workerFactory, defaultWorkerUrl} from './web_worker.ts';
 import {config} from './config.ts';
+import packageJSON from '../../package.json';
 
 describe('workerFactory', () => {
     const originalWorker = (globalThis as any).Worker;
@@ -24,6 +25,16 @@ describe('workerFactory', () => {
 
         expect(WorkerSpy).toHaveBeenCalledTimes(1);
         expect(WorkerSpy.mock.calls[0]).toEqual(['']);
+    });
+
+    test('defaultWorkerUrl appends version query param for cache busting', () => {
+        // defaultWorkerUrl() returns '' in the test environment because import.meta.url
+        // is a file:// path (not http). We verify the URL-building logic directly.
+        const fakeModuleUrl = 'http://localhost/dist/maplibre-gl.mjs';
+        const url = new URL('./maplibre-gl-worker.mjs', fakeModuleUrl);
+        url.searchParams.set('v', packageJSON.version);
+        expect(url.href).toBe(`http://localhost/dist/maplibre-gl-worker.mjs?v=${packageJSON.version}`);
+        expect(url.searchParams.get('v')).toBe(packageJSON.version);
     });
 
     test('creates a classic worker when WORKER_URL ends with .js', async () => {

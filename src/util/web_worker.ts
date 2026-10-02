@@ -1,4 +1,5 @@
 import {type AddProtocolAction, config} from './config.ts';
+import packageJSON from '../../package.json' with {type: 'json'};
 import type {default as MaplibreWorker} from '../source/worker.ts';
 import type {WorkerSourceConstructor} from '../source/worker_source.ts';
 import type {GetResourceResponse, RequestParameters} from './ajax.ts';
@@ -23,14 +24,16 @@ function isCrossOrigin(url: string): boolean {
     }
 }
 
-function defaultWorkerUrl(): string {
+export function defaultWorkerUrl(): string {
     try {
         const moduleUrl = import.meta.url;
         if (!/^https?:/.test(moduleUrl)) return '';
         const workerName = moduleUrl.endsWith('-dev.mjs')
             ? 'maplibre-gl-worker-dev.mjs'
             : 'maplibre-gl-worker.mjs';
-        return new URL(`./${workerName}`, moduleUrl).href;
+        const url = new URL(`./${workerName}`, moduleUrl);
+        url.searchParams.set('v', packageJSON.version);
+        return url.href;
     } catch {
         return '';
     }
